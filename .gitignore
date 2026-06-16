@@ -1,0 +1,13 @@
+.venv/
+.env/
+
+demo/api.py
+demo/Dockerfile
+demo/requirements.txt
+demo/test_pipeline.py
+
+__pycache__/
+checkpoints/
+
+catboost_info/
+crop_all.ipynb
