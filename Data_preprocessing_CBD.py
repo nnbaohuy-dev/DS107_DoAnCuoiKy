@@ -1,10 +1,14 @@
 import cv2 as cv
 import numpy as np
 import os
+import pickle
+from pathlib import Path
 from sklearn.preprocessing import StandardScaler
 from skimage.feature import hog, local_binary_pattern
 from sklearn.model_selection import train_test_split
 from Object_detection_CBD import process_and_plot_coffee_bean
+
+CHKP_PATH = Path('./demo/checkpoints')
 
 def load_data_and_labels(base_folder):
     """
@@ -152,6 +156,9 @@ def data_preprocessing(base_folder="CBD_Coffee Bean Dataset"):
     X_train = scaler.fit_transform(X_train)
     X_val = scaler.transform(X_val)
     X_test = scaler.transform(X_test)
+
+    with open(CHKP_PATH / 'scaler.pkl', 'wb') as f:
+        pickle.dump(scaler, f)
     
     print(f"Kích thước X_train: {X_train.shape}")
     print(f"Kích thước X_val:   {X_val.shape}")
