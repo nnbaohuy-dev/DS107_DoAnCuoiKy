@@ -1,0 +1,209 @@
+:root {
+    --primary-color: #283e32;
+    --primary-light: #3a5a49;
+    --primary-dark: #1b2a22;
+    --accent-color: #d4af37;
+    --bg-color: #f5f7f6;
+    --text-color: #333;
+    --text-light: #666;
+    --white: #ffffff;
+    --border-radius: 12px;
+    --transition: all 0.3s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    background-color: var(--primary-color);
+    color: var(--white);
+    padding: 2rem 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.header-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    text-align: center;
+}
+
+header h1 {
+    font-weight: 600;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 1px;
+}
+
+header p {
+    font-weight: 300;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+main {
+    flex: 1;
+    max-width: 1000px;
+    margin: 3rem auto;
+    padding: 0 2rem;
+    width: 100%;
+}
+
+.upload-section, .result-section {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    padding: 2.5rem;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    transition: var(--transition);
+}
+
+.upload-container {
+    border: 2px dashed #cbd5e0;
+    border-radius: var(--border-radius);
+    padding: 4rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    background-color: #f8fafc;
+}
+
+.upload-container:hover, .upload-container.dragover {
+    border-color: var(--primary-color);
+    background-color: #f0fdf4;
+}
+
+.upload-icon {
+    width: 64px;
+    height: 64px;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.upload-content h3 {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.upload-content p {
+    color: var(--text-light);
+    margin-bottom: 1rem;
+}
+
+.btn {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.btn:hover {
+    background-color: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(40, 62, 50, 0.3);
+}
+
+.btn-secondary {
+    background-color: #e2e8f0;
+    color: var(--text-color);
+}
+
+.btn-secondary:hover {
+    background-color: #cbd5e0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.preview-container {
+    text-align: center;
+}
+
+#image-preview, #result-image {
+    max-width: 100%;
+    max-height: 500px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.result-section h2 {
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
+}
+
+.result-stats {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f0fdf4;
+    border-radius: 8px;
+}
+
+.overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition);
+}
+
+.overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 5px solid rgba(40, 62, 50, 0.2);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+#loading-text {
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+#new-analysis-btn {
+    display: block;
+    margin: 2rem auto 0;
+}
