@@ -1,31 +1,55 @@
-// Configuration
-// If you host the backend somewhere else, replace this URL with your backend URL (e.g. https://my-space.hf.space)
-const API_BASE_URL = "https://shreacker-coffee-bean-quality-api.hf.space";
+const API_BASE_URL = "https://shreacker-coffee-bean-quality-api.hf.space"; // Ensure this is pointing to your API (local or HF)
+
+// Global State
+const appState = {
+    currentImageFile: null,
+    currentImageDataURL: null,
+    analyticsHistory: [] // Will store { timestamp, imageURL, totalBeans, gradeBreakdown }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
+    // ---- TAB ROUTING LOGIC ----
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active classes
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            // Add active to clicked
+            btn.classList.add('active');
+            const tabId = btn.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
+    // ---- TAB 1: UPLOAD LOGIC ----
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
     const browseBtn = document.getElementById('browse-btn');
+    const uploadContent = document.getElementById('upload-content');
     const previewContainer = document.getElementById('preview-container');
     const imagePreview = document.getElementById('image-preview');
-    const analyzeBtn = document.getElementById('analyze-btn');
     const cancelBtn = document.getElementById('cancel-btn');
+    const analyzeBtn = document.getElementById('analyze-btn');
     
-    const uploadSection = document.querySelector('.upload-section');
-    const resultSection = document.getElementById('result-section');
+    // Output UI
+    const outputPlaceholder = document.getElementById('output-placeholder');
+    const resultContent = document.getElementById('result-content');
     const resultImage = document.getElementById('result-image');
-    const resultStats = document.getElementById('result-stats');
-    const newAnalysisBtn = document.getElementById('new-analysis-btn');
-    
-    const overlay = document.getElementById('loading-overlay');
-    const loadingText = document.getElementById('loading-text');
+    const beanCounter = document.getElementById('bean-counter');
+    const loadingOverlay = document.getElementById('loading-overlay');
 
-    let currentFile = null;
+    browseBtn.addEventListener('click', () => fileInput.click());
 
-    // Ping the backend to wake it up if it's on HF Spaces
-    fetch(`${API_BASE_URL}/ping`).catch(e => console.log("Backend might be waking up..."));
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
 
-    // Event Listeners for Drag & Drop
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.classList.add('dragover');
@@ -38,93 +62,192 @@ document.addEventListener('DOMContentLoaded', () => {
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length) {
+        if (e.dataTransfer.files.length > 0) {
             handleFile(e.dataTransfer.files[0]);
         }
     });
 
-    browseBtn.addEventListener('click', () => fileInput.click());
-    
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length) {
-            handleFile(e.target.files[0]);
-        }
-    });
-
     cancelBtn.addEventListener('click', () => {
-        currentFile = null;
-        fileInput.value = "";
+        appState.currentImageFile = null;
+        appState.currentImageDataURL = null;
+        
+        // Reset Left Panel
+        uploadContent.style.display = 'block';
         previewContainer.style.display = 'none';
-        dropZone.style.display = 'block';
+        fileInput.value = '';
+        
+        // Reset Right Panel
+        outputPlaceholder.style.display = 'flex';
+        resultContent.style.display = 'none';
     });
-
-    newAnalysisBtn.addEventListener('click', () => {
-        resultSection.style.display = 'none';
-        uploadSection.style.display = 'block';
-        cancelBtn.click();
-    });
-
-    analyzeBtn.addEventListener('click', analyzeImage);
 
     function handleFile(file) {
         if (!file.type.startsWith('image/')) {
-            alert('Please select an image file.');
+            alert('Please select an image file');
             return;
         }
-        currentFile = file;
+
+        appState.currentImageFile = file;
+
         const reader = new FileReader();
         reader.onload = (e) => {
+            appState.currentImageDataURL = e.target.result;
             imagePreview.src = e.target.result;
-            dropZone.style.display = 'none';
-            previewContainer.style.display = 'block';
+            uploadContent.style.display = 'none';
+            previewContainer.style.display = 'flex';
+            
+            // Reset right panel for new image
+            outputPlaceholder.style.display = 'flex';
+            resultContent.style.display = 'none';
         };
         reader.readAsDataURL(file);
     }
 
-    async function analyzeImage() {
-        if (!currentFile) return;
+    // ---- TAB 1: INFERENCE & COUNTER LOGIC ----
+    analyzeBtn.addEventListener('click', async () => {
+        if (!appState.currentImageFile) return;
 
-        showLoading("Analyzing quality... (This may take a minute if the AI is waking up)");
-        
+        loadingOverlay.style.display = 'flex';
+
         const formData = new FormData();
-        formData.append("file", currentFile);
+        formData.append("file", appState.currentImageFile);
 
         try {
             const response = await fetch(`${API_BASE_URL}/predict`, {
-                method: "POST",
+                method: 'POST',
                 body: formData
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.error || "Failed to analyze image");
+                throw new Error(data.error || 'Failed to analyze image');
             }
 
-            const data = await response.json();
+            // Update Right Panel UI
+            resultImage.src = data.image_base64;
+            const breakdown = data.breakdown || {};
             
-            if (data.status === "success") {
-                resultImage.src = data.image_base64;
-                resultStats.innerText = `Successfully detected and analyzed ${data.beans_detected} coffee beans!`;
-                
-                uploadSection.style.display = 'none';
-                resultSection.style.display = 'block';
-            } else {
-                throw new Error(data.error || "Unknown error occurred");
+            beanCounter.innerHTML = '';
+            for (const [grade, count] of Object.entries(breakdown)) {
+                beanCounter.innerHTML += `
+                    <div class="counter-card">
+                        <div class="counter-label">Grade ${grade}</div>
+                        <div class="counter-value">${count}</div>
+                    </div>
+                `;
             }
+
+            // Also show total
+            beanCounter.innerHTML += `
+                <div class="counter-card" style="border-color: var(--accent-color);">
+                    <div class="counter-label">Total Detected</div>
+                    <div class="counter-value">${data.beans_detected}</div>
+                </div>
+            `;
+
+            outputPlaceholder.style.display = 'none';
+            resultContent.style.display = 'block';
+
+            // Log to Analytics
+            logToAnalytics(appState.currentImageDataURL, data.beans_detected, breakdown);
 
         } catch (error) {
-            alert("Error: " + error.message);
+            console.error('Error:', error);
+            alert('Error analyzing image: ' + error.message);
         } finally {
-            hideLoading();
+            loadingOverlay.style.display = 'none';
         }
+    });
+
+    // ---- TAB 3: SAMPLE GALLERY LOGIC ----
+    const loadSampleBtns = document.querySelectorAll('.load-sample-btn');
+    loadSampleBtns.forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const imgSrc = e.target.getAttribute('data-src');
+            
+            // Switch to Predict Tab
+            document.querySelector('[data-tab="tab-predict"]').click();
+            
+            // Fetch the image to convert it into a File object for the pipeline
+            loadingOverlay.style.display = 'flex';
+            document.getElementById('loading-text').innerText = "Loading sample...";
+            
+            try {
+                const res = await fetch(imgSrc);
+                const blob = await res.blob();
+                const file = new File([blob], "sample.png", { type: "image/png" });
+                
+                // Inject to state
+                handleFile(file);
+                
+                // Auto trigger analysis after a short delay for UI to update
+                setTimeout(() => {
+                    document.getElementById('loading-text').innerText = "Waking up the AI model (this may take a minute)...";
+                    analyzeBtn.click();
+                }, 500);
+            } catch(err) {
+                alert("Failed to load sample: " + err);
+                loadingOverlay.style.display = 'none';
+            }
+        });
+    });
+
+    // ---- TAB 4: ANALYTICS LOGIC ----
+    function logToAnalytics(thumbnailURL, totalBeans, breakdown) {
+        const now = new Date();
+        const timestamp = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+        
+        let breakdownStr = Object.entries(breakdown).map(([g, c]) => `${g}: ${c}`).join(', ');
+        
+        appState.analyticsHistory.push({
+            timestamp,
+            thumbnailURL,
+            totalBeans,
+            breakdownStr
+        });
+
+        renderAnalyticsTable();
     }
 
-    function showLoading(text) {
-        loadingText.innerText = text;
-        overlay.classList.add('active');
+    function renderAnalyticsTable() {
+        const tbody = document.getElementById('session-tbody');
+        if (appState.analyticsHistory.length === 0) return;
+        
+        tbody.innerHTML = ''; // Clear empty state
+        
+        appState.analyticsHistory.forEach(log => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${log.timestamp}</td>
+                    <td><img src="${log.thumbnailURL}" class="thumb-img" alt="thumb"></td>
+                    <td>${log.totalBeans}</td>
+                    <td>${log.breakdownStr}</td>
+                </tr>
+            `;
+        });
     }
 
-    function hideLoading() {
-        overlay.classList.remove('active');
-    }
+    const exportBtn = document.getElementById('export-csv-btn');
+    exportBtn.addEventListener('click', () => {
+        if (appState.analyticsHistory.length === 0) {
+            alert("No data to export!");
+            return;
+        }
+
+        let csvContent = "data:text/csv;charset=utf-8,Timestamp,Total Beans,Grade Breakdown\n";
+        
+        appState.analyticsHistory.forEach(log => {
+            const safeBreakdown = `"${log.breakdownStr}"`; // wrap in quotes to escape commas
+            csvContent += `${log.timestamp},${log.totalBeans},${safeBreakdown}\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "coffee_session_analytics.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
 });

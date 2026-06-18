@@ -3,53 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coffee Bean Quality Ranking</title>
+    <title>Coffee Quality Ranking</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Cormorant:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="overlay" id="loading-overlay">
+    <div class="hero-section">
+        <div class="hero-overlay"></div>
+        
+        <header class="app-header">
+            <h1 class="title-season">COFFEE QUALITY</h1>
+            <p class="subtitle-montserrat">Analyze your coffee bean quality at a click of a button</p>
+        </header>
+
+        <nav class="app-nav">
+            <button class="tab-btn active" data-tab="tab-predict">Predict</button>
+            <button class="tab-btn" data-tab="tab-methodology">Methodology</button>
+            <button class="tab-btn" data-tab="tab-gallery">Sample Gallery</button>
+            <button class="tab-btn" data-tab="tab-analytics">Analytics History</button>
+            <button class="tab-btn" data-tab="tab-about">About Us</button>
+        </nav>
+    </div>
+
+    <main class="app-main">
+        <!-- TAB 1: PREDICT -->
+        <section id="tab-predict" class="tab-content active">
+            <div class="split-layout">
+                <!-- Left: Input -->
+                <div class="panel left-panel">
+                    <div class="upload-container" id="drop-zone">
+                        <input type="file" id="file-input" accept="image/*" hidden>
+                        <div class="upload-content" id="upload-content">
+                            <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                            <h3>Drag & Drop an image here</h3>
+                            <p>or</p>
+                            <button class="btn browse-btn" id="browse-btn">Browse Files</button>
+                        </div>
+                        <div class="preview-container" id="preview-container" style="display: none;">
+                            <img id="image-preview" alt="Image preview">
+                            <div class="action-buttons">
+                                <button class="btn btn-primary" id="analyze-btn">Analyze Quality</button>
+                                <button class="btn btn-secondary" id="cancel-btn">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right: Output -->
+                <div class="panel right-panel">
+                    <div class="placeholder-output" id="output-placeholder">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        <p>Upload and analyze an image to see results here.</p>
+                    </div>
+                    <div class="result-content" id="result-content" style="display: none;">
+                        <h3>Analysis Results</h3>
+                        <div class="bean-counter" id="bean-counter">
+                            <!-- Counter items generated dynamically -->
+                        </div>
+                        <div class="result-image-container">
+                            <img id="result-image" alt="Analyzed coffee beans">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: METHODOLOGY -->
+        <section id="tab-methodology" class="tab-content">
+            <div class="markdown-body">
+                <h2>1. Grading Standards & Dataset</h2>
+                <ul>
+                    <li><strong>Source:</strong> CBD_Coffee Bean Dataset (Wayanad, Kerala, India).</li>
+                    <li><strong>Dataset Scale:</strong> 16,285 single-bean images cropped from 450 raw bulk images.</li>
+                    <li><strong>Quality Grades (Robusta):</strong> Evaluated across 7 distinct uniform tiers:
+                        <ul>
+                            <li><strong>AAA & AA:</strong> Premium specialty classes featuring maximum uniformity and high aesthetic consistency.</li>
+                            <li><strong>A:</strong> High-grade commercial quality complying strictly with standard sizing.</li>
+                            <li><strong>C & Bits:</strong> Lower quality tiers containing pronounced physical defects or broken beans.</li>
+                            <li><strong>PB-I & PB-II:</strong> Peaberry classes distinguished by unique physical rounded geometry.</li>
+                        </ul>
+                        <em>(Note: Highly inconsistent mixed classes like AB and Bulk are excluded to maximize training reliability).</em>
+                    </li>
+                </ul>
+
+                <h2>2. Processing Pipeline</h2>
+                <p>Our automated computer vision system analyzes the coffee beans using a traditional, highly interpretable Machine Learning workflow rather than resource-heavy Deep Learning:</p>
+                <ul>
+                    <li><strong>Step 1: Object Detection & Localization</strong>
+                        <ul>
+                            <li>Uses <strong>Global Adaptive Thresholding</strong> (iterative threshold search on the HSV Saturation channel) to perfectly identify single beans against light backgrounds under varied illumination.</li>
+                            <li>Extracts target regions into fixed 208×208 pixel <strong>Regions of Interest (ROI)</strong> to preserve the true scale of the physical bean.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Step 2: Local Segmentation & Contouring</strong>
+                        <ul>
+                            <li>Applies local <strong>Otsu Segmentation</strong> on each isolated bean followed by Morphological Opening/Closing to clear random pixel noise.</li>
+                            <li>Uses a mathematical <strong>Convex Hull</strong> wrapper to precisely smooth the boundary while evaluating defects via "solidity" changes.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Step 3: Comprehensive Feature Extraction (2,567 Dimensions)</strong>
+                        <ul>
+                            <li><strong>Geometric Features (5D):</strong> Measures Circularity, Aspect Ratio, and Solidity directly from the contour shape.</li>
+                            <li><strong>HOG (2,352D):</strong> Captures surface cuts, cracks, and internal groove structures from the natural texture.</li>
+                            <li><strong>Color Histogram HSV (192D):</strong> Graphs color distribution strictly inside the bean mask, omitting background color.</li>
+                            <li><strong>LBP (18D):</strong> Evaluates minute skin micro-textures like fungal spots or surface roughness.</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h2>3. Model Architecture & Selection</h2>
+                <ul>
+                    <li><strong>Two-Phase Pipeline:</strong>
+                        <ul>
+                            <li><strong>Phase 1 (Feature Selection):</strong> Trains an initial gradient boosting model using native <strong>SHAP Importance values</strong> (Gain criterion) to filter out noisy vectors down to the Top-K features (K = 500).</li>
+                            <li><strong>Phase 2 (Final Inference):</strong> Trains the optimized, compact classifier with Early Stopping to completely mitigate overfitting.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- TAB 3: SAMPLE GALLERY -->
+        <section id="tab-gallery" class="tab-content">
+            <div class="gallery-grid">
+                <!-- Card 1 -->
+                <div class="gallery-card">
+                    <img src="samples/AAA.jpg" alt="Grade AAA">
+                    <div class="card-info">
+                        <h4>Grade AAA</h4>
+                        <p>Premium specialty class featuring maximum uniformity and high aesthetic consistency.</p>
+                        <button class="btn btn-outline load-sample-btn" data-src="samples/AAA.jpg">Load Sample</button>
+                    </div>
+                </div>
+                <!-- Card 2 -->
+                <div class="gallery-card">
+                    <img src="samples/AA.jpg" alt="Grade AA">
+                    <div class="card-info">
+                        <h4>Grade AA</h4>
+                        <p>Premium specialty class featuring high uniformity and aesthetic consistency.</p>
+                        <button class="btn btn-outline load-sample-btn" data-src="samples/AA.jpg">Load Sample</button>
+                    </div>
+                </div>
+                <!-- Card 3 -->
+                <div class="gallery-card">
+                    <img src="samples/A.jpg" alt="Grade A">
+                    <div class="card-info">
+                        <h4>Grade A</h4>
+                        <p>High-grade commercial quality complying strictly with standard sizing.</p>
+                        <button class="btn btn-outline load-sample-btn" data-src="samples/A.jpg">Load Sample</button>
+                    </div>
+                </div>
+                <!-- Card 4 -->
+                <div class="gallery-card">
+                    <img src="samples/PB-I.jpg" alt="Grade PB-I">
+                    <div class="card-info">
+                        <h4>Grade PB-I</h4>
+                        <p>Peaberry class distinguished by unique physical rounded geometry.</p>
+                        <button class="btn btn-outline load-sample-btn" data-src="samples/PB-I.jpg">Load Sample</button>
+                    </div>
+                </div>
+                <!-- Card 5 -->
+                <div class="gallery-card">
+                    <img src="samples/PB-II.jpg" alt="Grade PB-II">
+                    <div class="card-info">
+                        <h4>Grade PB-II</h4>
+                        <p>Peaberry secondary class distinguished by smaller rounded geometry.</p>
+                        <button class="btn btn-outline load-sample-btn" data-src="samples/PB-II.jpg">Load Sample</button>
+                    </div>
+                </div>
+                <!-- Card 6 -->
+                <div class="gallery-card">
+                    <img src="samples/C.jpg" alt="Grade C">
+                    <div class="card-info">
+                        <h4>Grade C</h4>
+                        <p>Lower quality tier containing pronounced physical defects.</p>
+                        <button class="btn btn-outline load-sample-btn" data-src="samples/C.jpg">Load Sample</button>
+                    </div>
+                </div>
+                <!-- Card 7 -->
+                <div class="gallery-card">
+                    <img src="samples/Bits.jpg" alt="Bits">
+                    <div class="card-info">
+                        <h4>Bits</h4>
+                        <p>Broken beans and significant fragments.</p>
+                        <button class="btn btn-outline load-sample-btn" data-src="samples/Bits.jpg">Load Sample</button>
+                    </div>
+                </div>
+                <!-- Card 8 -->
+                <div class="gallery-card">
+                    <img src="samples/Bulk.jpg" alt="Bulk">
+                    <div class="card-info">
+                        <h4>Bulk</h4>
+                        <p>Inconsistent mixed class of coffee beans.</p>
+                        <button class="btn btn-outline load-sample-btn" data-src="samples/Bulk.jpg">Load Sample</button>
+                    </div>
+                </div>
+                <!-- Card 9 -->
+                <div class="gallery-card">
+                    <img src="samples/A-Bulk.jpg" alt="A-Bulk">
+                    <div class="card-info">
+                        <h4>A-Bulk</h4>
+                        <p>Mixed class predominantly containing Grade A size variations.</p>
+                        <button class="btn btn-outline load-sample-btn" data-src="samples/A-Bulk.jpg">Load Sample</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: ANALYTICS -->
+        <section id="tab-analytics" class="tab-content">
+            <div class="analytics-header">
+                <h2>Session Data Table</h2>
+                <button class="btn btn-primary" id="export-csv-btn">Export CSV</button>
+            </div>
+            <p>Below is the evaluation log of your current web testing session.</p>
+            
+            <div class="table-responsive" style="margin-bottom: 40px;">
+                <table class="data-table" id="session-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Image Thumbnail</th>
+                            <th>Total Beans Detected</th>
+                            <th>Grade Breakdown</th>
+                        </tr>
+                    </thead>
+                    <tbody id="session-tbody">
+                        <!-- Populated dynamically -->
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #aaa;">No analyses performed yet in this session.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>Core Performance Benchmarks (Test Set)</h2>
+            <p>Our Two-Phase Gradient Boosting framework drastically outperforms traditional machine learning approaches:</p>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Model Configuration</th>
+                            <th>Test Accuracy</th>
+                            <th>F1-Score</th>
+                            <th>Inference Latency</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: rgba(205, 220, 57, 0.1); border-left: 3px solid #CDDC39;">
+                            <td><strong>Two-Phase CatBoost (Top-500)</strong></td>
+                            <td><strong>86.10%</strong></td>
+                            <td><strong>86.04%</strong></td>
+                            <td><strong>0.0276s</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Two-Phase XGBoost (Top-500)</td>
+                            <td>84.82%</td>
+                            <td>84.74%</td>
+                            <td>0.1781s</td>
+                        </tr>
+                        <tr>
+                            <td>Two-Phase LightGBM (Top-1000)</td>
+                            <td>84.74%</td>
+                            <td>84.67%</td>
+                            <td>0.5558s</td>
+                        </tr>
+                        <tr>
+                            <td>Support Vector Machine (RBF)</td>
+                            <td>83.85%</td>
+                            <td>83.86%</td>
+                            <td>30.5582s</td>
+                        </tr>
+                        <tr>
+                            <td>Random Forest Classifier</td>
+                            <td>79.10%</td>
+                            <td>78.87%</td>
+                            <td>0.2119s</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TAB 5: ABOUT -->
+        <section id="tab-about" class="tab-content">
+            <div class="split-layout about-layout">
+                <div class="panel left-panel markdown-body">
+                    <h2>About Us</h2>
+                    <p>We are a group of students from the University of Information Technology, Vietnam (UIT). This application serves as our university project; however, we are also deeply committed to the mission of refining coffee bean quality control within the agricultural industry.</p>
+                    <p>Driven by this goal, we have developed a comprehensive and efficient coffee bean quality ranking system that is highly user-friendly. Welcome to our demonstration website! We invite you to test your own coffee beans with our machine learning model. With just the click of a button, you can evaluate the quality of your coffee batches with an accuracy of up to 86%.</p>
+                    <p>Looking ahead, we are eager to bring this system to life by integrating it into sorting machinery across domestic coffee processing factories. Backed by our ongoing improvements and our passion for boosting the domestic industrial economy, we aim to make a lasting impact.</p>
+                    <p><strong>Contact Us:</strong><br>
+                    <a href="mailto:24521087@gm.uit.edu.vn">24521087@gm.uit.edu.vn</a><br>
+                    <a href="mailto:24520682@gm.uit.edu.vn">24520682@gm.uit.edu.vn</a><br>
+                    <a href="mailto:24521075@gm.uit.edu.vn">24521075@gm.uit.edu.vn</a><br>
+                    <a href="mailto:24521229@gm.uit.edu.vn">24521229@gm.uit.edu.vn</a></p>
+                </div>
+                <div class="panel right-panel">
+                    <div class="feedback-form">
+                        <h2>User Feedback</h2>
+                        <p>Found a false positive defect or an incorrect grade? Let us know!</p>
+                        <form id="feedback-form" onsubmit="event.preventDefault(); alert('Feedback submitted! Thank you.'); this.reset();">
+                            <div class="form-group">
+                                <label for="feedback-type">Issue Type</label>
+                                <select id="feedback-type" required>
+                                    <option value="" disabled selected>Select an issue...</option>
+                                    <option value="false-positive">False Positive Defect</option>
+                                    <option value="incorrect-grade">Incorrect Grade</option>
+                                    <option value="ui-bug">Website Bug</option>
+                                    <option value="other">Other Feedback</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="feedback-desc">Description</label>
+                                <textarea id="feedback-desc" rows="5" placeholder="Please describe what went wrong..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Report</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div class="overlay" id="loading-overlay" style="display:none;">
         <div class="spinner"></div>
         <p id="loading-text">Waking up the AI model (this may take a minute)...</p>
     </div>
-
-    <header>
-        <div class="header-container">
-            <h1>Coffee Bean Quality Ranking</h1>
-            <p>Upload an image to detect and classify coffee bean quality.</p>
-        </div>
-    </header>
-
-    <main>
-        <section class="upload-section">
-            <div class="upload-container" id="drop-zone">
-                <input type="file" id="file-input" accept="image/*" hidden>
-                <div class="upload-content">
-                    <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                    </svg>
-                    <h3>Drag & Drop an image here</h3>
-                    <p>or</p>
-                    <button class="btn" id="browse-btn">Browse Files</button>
-                </div>
-            </div>
-            
-            <div class="preview-container" id="preview-container" style="display: none;">
-                <img id="image-preview" alt="Image preview">
-                <button class="btn btn-primary" id="analyze-btn">Analyze Quality</button>
-                <button class="btn btn-secondary" id="cancel-btn">Cancel</button>
-            </div>
-        </section>
-
-        <section class="result-section" id="result-section" style="display: none;">
-            <h2>Analysis Results</h2>
-            <div class="result-stats" id="result-stats"></div>
-            <div class="result-image-container">
-                <img id="result-image" alt="Analyzed coffee beans">
-            </div>
-            <button class="btn" id="new-analysis-btn">New Analysis</button>
-        </section>
-    </main>
 
     <script src="main.js"></script>
 </body>
